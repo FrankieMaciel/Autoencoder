@@ -3,13 +3,15 @@ from torchvision import datasets
 from torchvision import transforms
 import matplotlib.pyplot as plt
 from modelClass import Autoencoder
+from train import train
 import os
 
 model_filename = 'AutoencoderModel.pt'
-model_Dir = './' + model_filename
+model_Dir = ['./models/', model_filename]
 BATCH_SIZE = 64
 SHUFFLE = True
-LEARNING_RATE = 0.001
+Learning_rate = 0.001
+Epochs = 10
 
 rootDir = './data'
 Train = True
@@ -31,44 +33,15 @@ loader = torch.utils.data.DataLoader(
 
 model = Autoencoder()
 
-isExist = os.path.exists(model_Dir)
+# model_Dir é uma array onde o primeiro item é o diretório da pasta
+# e o segundo é o nome do arquivo.
+pathFile = model_Dir[0] + model_Dir[1]
+isExist = os.path.exists(pathFile)
+# Verifica se existe um modelo já treinado, caso contrário, inicializa o treino.
 if isExist:
-   model.load_state_dict(torch.load(model_Dir))
-
-loss_function = torch.nn.MSELoss()
-
-optimizer = torch.optim.Adam(
-    model.parameters(),
-    lr = LEARNING_RATE
-    )
-
-epochs = 10
-losses = []
-
-def train():
-   for epoch in range(epochs):
-      for (image, _) in loader:
-
-         # Imagem original
-         image = image.reshape(-1, 28 * 28)
-         # Imagem reconstruída
-         reconstructed = model(image)
-
-         loss = loss_function(reconstructed, image)
-         optimizer.zero_grad()
-         loss.backward()
-         optimizer.step()
-         losses.append(loss.detach())
-
-      print('| Epoch: {}'.format(epoch))
-
-   torch.save(model.state_dict(), model_filename)
-
-   plt.style.use('fivethirtyeight')
-   plt.xlabel('Iterations')
-   plt.ylabel('Loss')
-   plt.plot(losses[-100:])
-   plt.show()
+   model.load_state_dict(torch.load(pathFile))
+else:
+   train(model, Epochs, Learning_rate, loader, model_Dir)
 
 # Armazena todas as imagens originais
 imageList = []
@@ -82,9 +55,6 @@ def reconstructImages():
          reconstructed = model(image)
          imageList.append(image)
          reconstructedList.append(reconstructed.detach())
-
-if isExist == False:
-   train()
 
 reconstructImages()
 
